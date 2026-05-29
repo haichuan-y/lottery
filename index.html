@@ -363,7 +363,7 @@ const Audio = {
     this.unlock();
     if (this.bgmPlaying) return;
     if (!this.bgm) {
-      this.bgm = new Audio('背景音乐.mp3');
+      this.bgm = new Audio(encodeURI('背景音乐.mp3'));
       this.bgm.loop = true;
       this.bgm.volume = 0.35;
     }
@@ -577,11 +577,11 @@ function spawnSparkles(count, el) {
 
 // ============ WELCOME ============
 function startGame() {
-  Audio.startBGM();
   state.stage=1;
   showScreen('stage1');
   spawnSparkles(8, $('#screen-stage1'));
   setTimeout(()=>initStage1(), 500);
+  try { Audio.startBGM(); } catch(e) {}
 }
 
 // ============ STAGE 1: SHELL GAME ============
