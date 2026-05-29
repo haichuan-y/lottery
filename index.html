@@ -325,6 +325,102 @@ body{display:flex;align-items:center;justify-content:center}
 const $ = (s)=>document.querySelector(s);
 const $$ = (s)=>document.querySelectorAll(s);
 
+// ============ AUDIO ENGINE ============
+const Audio = {
+  ctx: null, bgmGain: null, bgmPlaying: false, bgmTimer: null,
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext||window.webkitAudioContext)();
+    this.bgmGain = this.ctx.createGain(); this.bgmGain.gain.value = 0.06;
+    this.bgmGain.connect(this.ctx.destination);
+  },
+  resume() { if (this.ctx&&this.ctx.state==='suspended') this.ctx.resume(); },
+  note(freq, start, dur, type='square', vol=.12, dest) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime + start;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    osc.connect(g); g.connect(dest||this.ctx.destination);
+    osc.start(t); osc.stop(t + dur + .02);
+  },
+  // Background Music - cheerful 8-bit loop
+  bgmMelody() {
+    const notes = [
+      523,659,784,1047, 784,659,523,587,
+      659,784,880,1047, 880,784,659,523,
+      784,880,1047,1318, 1047,880,784,659,
+      523,659,784,880, 659,523,440,523
+    ];
+    const rhythm = [
+      .2,.2,.2,.3, .2,.2,.2,.3,
+      .2,.2,.2,.3, .2,.2,.2,.3,
+      .2,.2,.2,.3, .2,.2,.2,.3,
+      .25,.25,.2,.2, .25,.25,.3,.3
+    ];
+    let t = 0;
+    for (let i = 0; i < notes.length; i++) {
+      this.note(notes[i], t, rhythm[i]*.9, 'square', .07, this.bgmGain);
+      // harmony bass
+      if (i % 4 === 0) this.note(notes[i]/2, t, rhythm[i]*1.2, 'triangle', .04, this.bgmGain);
+      t += rhythm[i];
+    }
+    this.bgmTimer = setTimeout(() => { if (this.bgmPlaying) this.bgmMelody(); }, t * 1000);
+  },
+  startBGM() {
+    this.init(); this.resume();
+    if (this.bgmPlaying) return;
+    this.bgmPlaying = true; this.bgmMelody();
+  },
+  stopBGM() {
+    this.bgmPlaying = false;
+    if (this.bgmTimer) { clearTimeout(this.bgmTimer); this.bgmTimer = null; }
+  },
+  // Sound Effects
+  sfxClick() { this.note(880,.01,.08,'square',.1); this.note(660,.04,.06,'square',.08); },
+  sfxShuffle() { this.note(330,.01,.12,'triangle',.06); },
+  sfxWin() {
+    this.note(523,0,.15,'square',.12); this.note(659,.1,.15,'square',.12);
+    this.note(784,.2,.2,'square',.12); this.note(1047,.3,.35,'square',.15);
+  },
+  sfxLose() { this.note(330,0,.15,'triangle',.08); this.note(262,.15,.2,'triangle',.08); },
+  sfxThrow() {
+    for (let i=0;i<5;i++) this.note(440+i*10,.03*i,.12,'sawtooth',.03);
+  },
+  sfxCatch() {
+    this.note(784,0,.1,'square',.1); this.note(988,.08,.1,'square',.1);
+    this.note(1175,.16,.15,'square',.12); this.note(1318,.25,.3,'square',.15);
+  },
+  sfxFail() {
+    this.note(200,0,.08,'sawtooth',.15); this.note(150,.05,.15,'sawtooth',.12);
+    this.note(80,.1,.2,'triangle',.1);
+  },
+  sfxSpinTick() { this.note(1200,.01,.03,'square',.04); },
+  sfxWinPrize() {
+    this.note(659,0,.08,'square',.12); this.note(784,.07,.08,'square',.12);
+    this.note(1047,.14,.1,'square',.12); this.note(1318,.21,.2,'square',.15);
+    this.note(1568,.28,.3,'square',.15);
+  },
+  sfxMedal() {
+    this.note(523,0,.12,'square',.1); this.note(659,.1,.12,'square',.1);
+    this.note(784,.2,.12,'square',.1); this.note(1047,.3,.4,'square',.15);
+    this.note(784,.5,.1,'triangle',.08); this.note(1047,.6,.5,'triangle',.12);
+  },
+  sfxHeart() {
+    const chord = [523,659,784,1047];
+    chord.forEach((f,i) => {
+      this.note(f, i*.15, .8, 'triangle', .06);
+      this.note(f, i*.15+.02, .8, 'sine', .04);
+    });
+  },
+  sfxGift() {
+    this.note(1047,0,.08,'square',.1); this.note(1318,.07,.08,'square',.1);
+    this.note(1568,.14,.2,'square',.15);
+  }
+};
+
 const state = {
   stage: 0,
   medals: [],
@@ -400,6 +496,7 @@ function dismissGiftModal() {
 
 function awardMedal(index) {
   if (state.medals.includes(index)) return;
+  Audio.sfxMedal();
   state.medals.push(index);
   const el = $(`.medal-icon[data-medal="${index}"]`);
   if (!el) return;
@@ -484,6 +581,7 @@ function spawnSparkles(count, el) {
 
 // ============ WELCOME ============
 function startGame() {
+  Audio.startBGM();
   state.stage=1;
   showScreen('stage1');
   spawnSparkles(8, $('#screen-stage1'));
@@ -541,6 +639,7 @@ function shuffleBoxes(step) {
   elB.style.transform=`translateX(${-dx}px)`;
   elA.style.zIndex='5';
   elB.style.zIndex='4';
+  Audio.sfxShuffle();
   setTimeout(()=>{
     const nextA=elA.nextSibling,nextB=elB.nextSibling;
     if(nextA===elB){area.insertBefore(elB,elA)}
@@ -570,6 +669,7 @@ function pickBox(index) {
   const correctBoxEl=boxes[state.giftBox];
   const correctDataBox=parseInt(correctBoxEl.getAttribute('data-box'));
   if (index===correctDataBox) {
+    Audio.sfxWin();
     msg.textContent='🎉 恭喜！你找到了零食大礼包！';
     spawnSparkles(12, correctBoxEl);
     setTimeout(()=>{
@@ -584,6 +684,7 @@ function pickBox(index) {
       showMedalPopup(popupContent, ()=>enterStage2());
     },600);
   } else {
+    Audio.sfxLose();
     msg.textContent='😢 选错了…不过没关系，再来一次！';
     setTimeout(()=>{
       state.boxesShuffled=false;
@@ -675,6 +776,7 @@ function startDimoWalk() {
 
 function selectBall(type) {
   if (state.dimoCaught||state.ballCounts[type]<=0) return;
+  Audio.sfxClick();
   state.selectedBall=type;
   $$('.ball-option').forEach(b=>b.classList.remove('selected'));
   const el=document.querySelector(`.ball-option[data-ball="${type}"]`);
@@ -707,6 +809,7 @@ function throwBall() {
   throwingBall.style.transform='scale(1)';
   $('#btn-throw').style.display='none';
   $$('.ball-option').forEach(b=>b.style.pointerEvents='none');
+  Audio.sfxThrow();
   function tick(now) {
     const t=Math.min((now-startTime)/duration,1);
     const eased=t<.5?2*t*t:-1+(4-2*t)*t;
@@ -725,6 +828,7 @@ function throwBall() {
 }
 
 function onCatchSuccess() {
+  Audio.sfxCatch();
   state.dimoCaught=true;
   state.ballCounts[state.selectedBall]--;
   $('#count-'+state.selectedBall).textContent='×'+state.ballCounts[state.selectedBall];
@@ -752,6 +856,7 @@ function onCatchSuccess() {
 }
 
 function onCatchFail() {
+  Audio.sfxFail();
   const ballType=state.selectedBall;
   state.selectedBall=null;
   state.ballCounts[ballType]--;
@@ -807,6 +912,7 @@ function openBackpack() {
 
 function openGiftInBackpack() {
   if (!state.backpackOpen||state.stage2Done) return;
+  Audio.sfxGift();
   state.stage2Done=true;
   spawnSparkles(8, $('#dimo-slot'));
   const giftContent=`
@@ -971,17 +1077,23 @@ function confirmPayment() {
 
 function animateWheel(fromAngle,toAngle,duration,cb) {
   const start=performance.now();
+  let lastTick=0,tickInterval=180;
   function tick(now) {
     const elapsed=now-start;
     const t=Math.min(elapsed/duration,1);
-    // ease-out
     const eased=1-Math.pow(1-t,3);
     const angle=fromAngle+(toAngle-fromAngle)*eased;
     drawWheel(angle);
+    if (t<1 && elapsed-lastTick > tickInterval) {
+      Audio.sfxSpinTick();
+      lastTick=elapsed;
+      tickInterval=180+t*600;
+    }
     if (t<1) {
       requestAnimationFrame(tick);
     } else {
       drawWheel(toAngle%(2*Math.PI));
+      Audio.sfxWinPrize();
       if (cb) cb();
     }
   }
@@ -1007,6 +1119,8 @@ function finishStage3() {
 // ============ FINAL ============
 function enterFinal() {
   state.stage=4;
+  Audio.stopBGM();
+  Audio.sfxHeart();
   showScreen('final');
   // render medals
   const medalsData=[
