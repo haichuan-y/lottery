@@ -1,0 +1,1072 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>妙妙的惊喜抽奖</title>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pink:#FF8FAB;--pink2:#FFB3C6;--purple:#C9B1FF;--blue:#A2D6F9;
+  --yellow:#FFE066;--gold:#FFD700;--mint:#98E8C1;--white:#FFF9FB;
+  --shadow:0 4px 15px rgba(180,140,160,0.25);
+  --shadow-lg:0 8px 30px rgba(180,140,160,0.35);
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'ZCOOL KuaiLe','PingFang SC','Microsoft YaHei',sans-serif;background:#FFF0F5;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+body{display:flex;align-items:center;justify-content:center}
+
+#app{position:relative;width:100%;max-width:480px;height:100vh;height:100dvh;overflow:hidden;background:linear-gradient(180deg,#FFE4EC 0%,#F3E8FF 30%,#E0F0FF 60%,#FFF5F5 100%)}
+#app::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,183,197,0.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 70%,rgba(200,180,255,0.25) 0%,transparent 50%),radial-gradient(ellipse at 20% 60%,rgba(160,215,250,0.2) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+/* particles */
+#particles{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+
+/* screens */
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;opacity:0;transform:scale(0.95);transition:opacity .5s,transform .5s;pointer-events:none;padding:20px;overflow-y:auto}
+.screen.active{opacity:1;transform:scale(1);pointer-events:auto}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 36px;border:none;border-radius:50px;font-family:inherit;font-size:1.15rem;font-weight:700;cursor:pointer;color:#fff;background:linear-gradient(135deg,#FF8FAB,#FF6B8A);box-shadow:0 6px 20px rgba(255,143,171,0.4);transition:transform .2s,box-shadow .2s;letter-spacing:.05em;position:relative;overflow:hidden}
+.btn:active{transform:scale(.95);box-shadow:0 3px 10px rgba(255,143,171,0.3)}
+.btn::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent,rgba(255,255,255,.25),transparent);transform:rotate(45deg) translateX(-100%);transition:transform .6s}
+.btn:active::after{transform:rotate(45deg) translateX(100%)}
+.btn-secondary{background:linear-gradient(135deg,#C9B1FF,#B088F0);box-shadow:0 6px 20px rgba(180,140,240,0.4)}
+.btn-gold{background:linear-gradient(135deg,#FFD700,#FFA500);box-shadow:0 6px 20px rgba(255,180,0,0.4);color:#7B4B00}
+.btn-sm{padding:10px 24px;font-size:.95rem}
+
+/* title */
+.title{font-size:2rem;color:#FF6B8A;text-align:center;text-shadow:2px 2px 0 rgba(255,255,255,.8);margin-bottom:8px}
+.subtitle{font-size:1rem;color:#B088F0;text-align:center;margin-bottom:24px}
+.stage-title{font-size:1.5rem;color:#FF8FAB;text-align:center;margin-bottom:6px}
+.stage-num{display:inline-block;background:linear-gradient(135deg,#FF8FAB,#FF6B8A);color:#fff;padding:4px 16px;border-radius:20px;font-size:.85rem;margin-bottom:16px}
+
+/* medals bar */
+.medals-bar{position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:10;flex-wrap:wrap;justify-content:flex-end}
+.medal-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:rgba(255,255,255,.7);box-shadow:0 2px 8px rgba(0,0,0,.1);transition:transform .3s;animation:medalBounce .6s ease-out}
+@keyframes medalBounce{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.3) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+.medal-icon.locked{background:rgba(200,200,200,.3);filter:grayscale(1);font-size:.8rem}
+
+/* modals */
+.modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal-card{background:#fff;border-radius:24px;padding:28px 24px;text-align:center;max-width:340px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,.2);transform:translateY(20px);transition:transform .35s;position:relative}
+.modal-overlay.active .modal-card{transform:translateY(0)}
+.modal-card h3{font-size:1.5rem;color:#FF6B8A;margin-bottom:16px}
+.modal-card .qr-img{width:200px;height:200px;border-radius:16px;object-fit:contain;margin:0 auto 16px;display:block;border:2px dashed #FFB3C6}
+.modal-close{position:absolute;top:10px;right:14px;width:30px;height:30px;border-radius:50%;border:none;background:#f0f0f0;font-size:1rem;cursor:pointer;color:#999;display:flex;align-items:center;justify-content:center}
+
+/* Stage 1 - Boxes */
+.boxes-area{display:flex;gap:16px;justify-content:center;align-items:flex-end;perspective:800px;margin:20px 0}
+.gift-box{cursor:pointer;transition:transform .25s;position:relative;width:100px;height:110px}
+.gift-box:active{transform:scale(.93)}
+.gift-box .box-lid{position:absolute;top:0;left:-4px;width:108px;height:30px;background:linear-gradient(180deg,#FFB3C6,#FF8FAB);border-radius:8px 8px 2px 2px;transform-origin:right bottom;transition:transform .5s;z-index:2;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+.gift-box .box-body{position:absolute;top:24px;left:0;width:100px;height:86px;background:linear-gradient(180deg,#FFD1DC,#FFB3C6);border-radius:0 0 12px 12px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;box-shadow:0 4px 12px rgba(0,0,0,.08);border:3px solid rgba(255,255,255,.5)}
+.gift-box .ribbon-v{position:absolute;top:24px;left:44px;width:12px;height:86px;background:rgba(255,255,255,.5);z-index:1;border-radius:2px}
+.gift-box .ribbon-h{position:absolute;top:52px;left:0;width:100px;height:12px;background:rgba(255,255,255,.5);z-index:1;border-radius:2px}
+.gift-box .bow{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:1.3rem;z-index:3}
+.gift-box.open .box-lid{transform:rotateX(-120deg)}
+.gift-box .box-content{opacity:0;transform:translateY(10px);transition:opacity .4s .2s,transform .4s .2s}
+.gift-box.open .box-content{opacity:1;transform:translateY(0)}
+
+@keyframes boxShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.gift-box.shuffling{animation:boxShake .25s ease-in-out}
+
+/* Stage 2 - capture scene */
+.capture-scene{position:relative;width:100%;max-width:380px;height:320px;background:linear-gradient(180deg,#E0F5E8 0%,#C8E8D0 30%,#B8D8C0 60%,#A0C8A8 100%);border-radius:24px;overflow:hidden;margin:12px 0;box-shadow:var(--shadow-lg);border:3px solid rgba(255,255,255,.6)}
+.scene-ground{position:absolute;bottom:0;left:0;width:100%;height:35%;background:linear-gradient(180deg,#8BC49A,#6DAF7E);border-radius:50% 50% 0 0 / 20px 20px 0 0}
+.scene-grass{position:absolute;bottom:32%;left:0;width:100%;height:20px;display:flex;justify-content:space-around}
+.grass-blade{width:4px;background:#6DAF7E;border-radius:50% 50% 0 0;animation:grassSway 2s ease-in-out infinite}
+.grass-blade:nth-child(odd){height:16px;animation-delay:.3s}
+.grass-blade:nth-child(even){height:10px;animation-delay:.7s}
+@keyframes grassSway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.scene-flowers{position:absolute;bottom:30%}
+.flower{position:absolute;font-size:1.2rem;animation:flowerBop 3s ease-in-out infinite}
+@keyframes flowerBop{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+#dimo-character{position:absolute;bottom:22%;left:50%;transform:translateX(-50%);z-index:3;transition:none;cursor:pointer}
+#dimo-character img{width:100px;height:auto;display:block;animation:dimoIdle 1.5s ease-in-out infinite}
+@keyframes dimoIdle{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-12px) scale(1.05)}60%{transform:translateY(-4px) scale(.98)}}
+#dimo-character.moving{animation:dimoWalk .6s ease-in-out}
+@keyframes dimoWalk{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+
+.balls-selector{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+.ball-option{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .2s;padding:8px}
+.ball-option:active{transform:scale(.9)}
+.ball-option img{width:56px;height:56px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,.5);padding:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);transition:box-shadow .2s}
+.ball-option.selected img{box-shadow:0 0 0 3px #FF8FAB,0 4px 16px rgba(255,143,171,.5)}
+.ball-option span{font-size:.75rem;color:#888;margin-top:4px}
+.ball-count{font-size:.7rem!important;color:#FF8FAB!important;font-weight:700;background:rgba(255,255,255,.8);padding:1px 8px;border-radius:10px;margin-top:2px!important}
+.ball-option.broken img{filter:grayscale(1) opacity(.35)}
+.ball-option.broken{pointer-events:none!important}
+@keyframes ballShatter{0%{transform:scale(1);opacity:1;filter:brightness(1)}20%{transform:scale(1.25);opacity:1;filter:brightness(1.8)}40%{transform:scale(1.3);opacity:.8;filter:brightness(2.5)}70%{transform:scale(.8);opacity:.4;filter:brightness(.3) blur(2px)}100%{transform:scale(.15);opacity:0;filter:brightness(0) blur(4px)}}
+.shatter-fragment{position:absolute;pointer-events:none;z-index:31;width:10px;height:10px;border-radius:50%;animation:fragmentFly .55s ease-out forwards}
+@keyframes fragmentFly{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+
+#throwing-ball{position:absolute;z-index:10;pointer-events:none;transition:all .6s cubic-bezier(.25,.46,.45,.94);opacity:0}
+#throwing-ball img{width:40px;height:40px}
+
+.catch-result{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:20;background:rgba(255,255,255,.95);padding:20px 30px;border-radius:20px;text-align:center;box-shadow:var(--shadow-lg);transition:transform .4s cubic-bezier(.175,.885,.32,1.275)}
+.catch-result.show{transform:translate(-50%,-50%) scale(1)}
+.catch-result .emoji{font-size:3rem}
+.catch-result p{font-size:1.1rem;color:#FF8FAB;margin-top:6px}
+
+/* backpack */
+.backpack-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:340px;margin:16px 0}
+.backpack-slot{aspect-ratio:1;background:rgba(255,255,255,.7);border-radius:16px;display:flex;align-items:center;justify-content:center;border:2px dashed #FFB3C6;font-size:2.5rem;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.backpack-slot:active{transform:scale(.95)}
+.backpack-slot.has-item{border-style:solid;border-color:#FF8FAB;background:rgba(255,255,255,.9);box-shadow:var(--shadow);animation:slotGlow 2s ease-in-out infinite}
+@keyframes slotGlow{0%,100%{box-shadow:0 4px 12px rgba(255,143,171,.2)}50%{box-shadow:0 4px 24px rgba(255,143,171,.5)}}
+.backpack-slot .gift-on-dimo{position:absolute;font-size:1.8rem;top:5px;right:5px;animation:giftBounce .6s ease-in-out infinite;filter:drop-shadow(0 2px 4px rgba(255,143,171,.5));z-index:2}
+@keyframes giftBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.15)}}
+.backpack-slot:active .gift-on-dimo{animation:giftShake .3s ease-in-out}
+@keyframes giftShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-15deg)}75%{transform:rotate(15deg)}}
+.backpack-slot img{max-width:70%;max-height:70%;object-fit:contain}
+
+/* Stage 3 - Wheel */
+.wheel-container{position:relative;width:300px;height:300px;margin:16px 0}
+#wheel-canvas{width:100%;height:100%}
+.wheel-pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:2rem;z-index:5;filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))}
+.wheel-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#fff,#f0f0f0);box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#FF6B8A;font-weight:700;z-index:3}
+.spin-count-display{margin-bottom:4px;color:#B088F0;font-size:.9rem}
+.prize-display{font-size:1.3rem;color:#FF6B8A;margin-top:8px;min-height:36px;text-align:center}
+
+/* Final */
+.final-hearts{position:relative;font-size:4rem;animation:heartBeat 1s ease-in-out infinite}
+@keyframes heartBeat{0%,100%{transform:scale(1)}15%{transform:scale(1.25)}30%{transform:scale(1)}}
+.final-text{font-size:2.2rem;color:#FF6B8A;margin-top:16px;text-align:center;animation:textFloat 3s ease-in-out infinite;text-shadow:2px 2px 0 rgba(255,255,255,.8)}
+@keyframes textFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.medals-final{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:20px 0}
+.medal-badge{width:70px;height:85px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.8);border-radius:16px;box-shadow:var(--shadow);animation:medalPop .5s ease-out backwards}
+.medal-badge:nth-child(1){animation-delay:.1s}
+.medal-badge:nth-child(2){animation-delay:.3s}
+.medal-badge:nth-child(3){animation-delay:.5s}
+.medal-badge:nth-child(4){animation-delay:.7s}
+@keyframes medalPop{0%{transform:scale(0) rotate(-20deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.medal-badge .medal-emoji{font-size:2rem}
+.medal-badge .medal-label{font-size:.6rem;color:#999;text-align:center;line-height:1.2;margin-top:2px}
+
+/* floating sparkles */
+.sparkle{position:absolute;pointer-events:none;animation:sparkleFloat 3s ease-out forwards;z-index:30;font-size:1.5rem}
+@keyframes sparkleFloat{0%{opacity:1;transform:translateY(0) scale(0)}50%{opacity:1;transform:translateY(-40px) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(.5)}}
+.heart-float{position:absolute;pointer-events:none;z-index:30;animation:heartRise 4s ease-out forwards}
+@keyframes heartRise{0%{opacity:0;transform:translateY(0) scale(.3) rotate(0deg)}15%{opacity:1;transform:translateY(-15vh) scale(1) rotate(10deg)}50%{opacity:.8;transform:translateY(-45vh) scale(.9) rotate(-5deg)}100%{opacity:0;transform:translateY(-85vh) scale(.4) rotate(15deg)}}
+
+@media(max-width:380px){
+  .title{font-size:1.6rem}
+  .boxes-area{gap:10px}
+  .gift-box{width:80px;height:90px}
+  .gift-box .box-body{width:80px;height:68px;top:20px}
+  .gift-box .box-lid{width:86px;height:24px;left:-3px}
+  .gift-box .ribbon-v{left:34px;top:20px;height:68px}
+  .gift-box .ribbon-h{top:42px;width:80px}
+  .wheel-container{width:260px;height:260px}
+  .ball-option img{width:44px;height:44px}
+  #dimo-character img{width:80px}
+  .capture-scene{height:260px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<canvas id="particles"></canvas>
+
+<div class="medals-bar" id="medals-bar">
+  <div class="medal-icon locked" data-medal="0" title="眼疾手快勋章">🔒</div>
+  <div class="medal-icon locked" data-medal="1" title="洛克王国运气王勋章">🔒</div>
+  <div class="medal-icon locked" data-medal="2" title="爱的勋章">🔒</div>
+  <div class="medal-icon locked" data-medal="3" title="抱抱勋章">🔒</div>
+</div>
+
+<!-- Welcome -->
+<div class="screen active" id="screen-welcome">
+  <div style="font-size:4rem;animation:heartBeat 2s ease-in-out infinite">🎁</div>
+  <h1 class="title" style="margin-top:12px">妙妙的惊喜抽奖</h1>
+  <p class="subtitle">三关挑战 · 集齐勋章 · 赢取好礼</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:20px">
+    <span style="background:rgba(255,255,255,.7);padding:6px 14px;border-radius:20px;font-size:.8rem;color:#FF8FAB">🎯 三盒选一</span>
+    <span style="background:rgba(255,255,255,.7);padding:6px 14px;border-radius:20px;font-size:.8rem;color:#B088F0">⚾ 捕捉迪莫</span>
+    <span style="background:rgba(255,255,255,.7);padding:6px 14px;border-radius:20px;font-size:.8rem;color:#FFD700">🎰 幸运大转盘</span>
+  </div>
+  <button class="btn" onclick="startGame()">✨ 开始冒险</button>
+</div>
+
+<!-- Stage 1: Shell Game -->
+<div class="screen" id="screen-stage1">
+  <span class="stage-num">第一关</span>
+  <h2 class="stage-title">🎯 三盒选一</h2>
+  <p style="color:#999;font-size:.85rem;margin-bottom:8px">找出藏在盒子里的礼物！</p>
+  <div class="boxes-area" id="boxes-area">
+    <div class="gift-box" data-box="0" onclick="pickBox(0)">
+      <div class="bow">🎀</div>
+      <div class="box-lid"></div>
+      <div class="ribbon-v"></div>
+      <div class="ribbon-h"></div>
+      <div class="box-body"><span class="box-content">🎁</span></div>
+    </div>
+    <div class="gift-box" data-box="1" onclick="pickBox(1)">
+      <div class="bow">🎀</div>
+      <div class="box-lid"></div>
+      <div class="ribbon-v"></div>
+      <div class="ribbon-h"></div>
+      <div class="box-body"><span class="box-content">🎁</span></div>
+    </div>
+    <div class="gift-box" data-box="2" onclick="pickBox(2)">
+      <div class="bow">🎀</div>
+      <div class="box-lid"></div>
+      <div class="ribbon-v"></div>
+      <div class="ribbon-h"></div>
+      <div class="box-body"><span class="box-content">🎁</span></div>
+    </div>
+  </div>
+  <p id="stage1-msg" style="color:#B088F0;font-size:.9rem;min-height:24px;text-align:center"></p>
+</div>
+
+<!-- Stage 2: Dimo Capture -->
+<div class="screen" id="screen-stage2">
+  <span class="stage-num">第二关</span>
+  <h2 class="stage-title">⚾ 捕捉迪莫</h2>
+  <p style="color:#999;font-size:.85rem;margin-bottom:4px">选择你的球，捕捉可爱的迪莫！</p>
+  <div class="capture-scene" id="capture-scene">
+    <div class="scene-ground"></div>
+    <div class="scene-grass" id="scene-grass"></div>
+    <div class="scene-flowers" id="scene-flowers"></div>
+    <div id="dimo-character"><img src="迪莫图片.jpeg" alt="迪莫"></div>
+    <div id="throwing-ball"><img src="" alt="ball"></div>
+    <div class="catch-result" id="catch-result">
+      <div class="emoji">✨</div>
+      <p>捕捉成功！</p>
+      <button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="openBackpack()">🎒 打开背包</button>
+    </div>
+  </div>
+  <div class="balls-selector" id="balls-selector">
+    <div class="ball-option" data-ball="cocoa" onclick="selectBall('cocoa')">
+      <img src="可可果球.png" alt="妙妙球"><span>妙妙球</span><span class="ball-count" id="count-cocoa">×99</span>
+    </div>
+    <div class="ball-option" data-ball="prism" onclick="selectBall('prism')">
+      <img src="棱镜球.png" alt="棱镜球"><span>棱镜球</span><span class="ball-count" id="count-prism">×99</span>
+    </div>
+    <div class="ball-option" data-ball="dream" onclick="selectBall('dream')">
+      <img src="织梦球.png" alt="织梦球"><span>织梦球</span><span class="ball-count" id="count-dream">×99</span>
+    </div>
+  </div>
+  <button class="btn" id="btn-throw" style="margin-top:8px;display:none" onclick="throwBall()">🎯 投掷！</button>
+  <p id="stage2-msg" style="color:#B088F0;font-size:.85rem;min-height:22px;text-align:center;margin-top:4px"></p>
+
+  <!-- Backpack overlay -->
+  <div style="display:none" id="backpack-view">
+    <h3 style="color:#FF8FAB;margin-bottom:4px">🎒 我的背包</h3>
+    <div class="backpack-grid">
+      <div class="backpack-slot has-item" id="dimo-slot" onclick="openGiftInBackpack()">
+        <img src="迪莫图片.jpeg" alt="迪莫" style="width:55%">
+        <span class="gift-on-dimo">🎁</span>
+      </div>
+      <div class="backpack-slot"></div>
+      <div class="backpack-slot"></div>
+      <div class="backpack-slot"></div>
+    </div>
+    <p style="color:#B088F0;font-size:.8rem">点击迪莫背上的礼物打开！</p>
+  </div>
+</div>
+
+<!-- Stage 3: Wheel -->
+<div class="screen" id="screen-stage3">
+  <span class="stage-num">第三关</span>
+  <h2 class="stage-title">🎰 幸运大转盘</h2>
+  <div class="spin-count-display" id="spin-count-text">剩余抽奖次数：3</div>
+  <p style="color:#FF6B8A;font-size:1.1rem;font-weight:700;margin-bottom:4px">5.20 元 / 次</p>
+  <div class="wheel-container" id="wheel-container">
+    <div class="wheel-pointer">▼</div>
+    <canvas id="wheel-canvas" width="600" height="600"></canvas>
+    <div class="wheel-center">GO</div>
+  </div>
+  <div class="prize-display" id="prize-display"></div>
+  <button class="btn btn-gold" id="btn-spin" onclick="startSpin()">💫 开始抽奖</button>
+  <p style="color:#ccc;font-size:.7rem;margin-top:4px" id="stage3-hint"></p>
+</div>
+
+<!-- Final -->
+<div class="screen" id="screen-final">
+  <div class="medals-final" id="medals-final"></div>
+  <div class="final-hearts">❤️</div>
+  <h1 class="final-text">爱你，妙妙大王！</h1>
+  <p style="color:#B088F0;margin-top:8px;text-align:center">感谢参与这场奇妙冒险 💕</p>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closePayment()">✕</button>
+    <h3>💳 扫码支付</h3>
+    <p style="color:#999;margin-bottom:12px">请支付 <b style="color:#FF6B8A;font-size:1.2rem">5.20元</b></p>
+    <img class="qr-img" src="收款码.png" alt="收款码">
+    <p style="color:#ccc;font-size:.75rem;margin-bottom:14px">支付后请点击下方按钮</p>
+    <button class="btn btn-gold" onclick="confirmPayment()">✅ 我已支付，开始抽奖</button>
+  </div>
+</div>
+
+<!-- Medal Popup -->
+<div class="modal-overlay" id="modal-medal">
+  <div class="modal-card">
+    <div id="medal-popup-content"></div>
+  </div>
+</div>
+
+<!-- Gift Reveal Modal -->
+<div class="modal-overlay" id="modal-gift">
+  <div class="modal-card" id="modal-gift-content"></div>
+</div>
+
+</div>
+
+<script>
+// ============ GAME ENGINE ============
+const $ = (s)=>document.querySelector(s);
+const $$ = (s)=>document.querySelectorAll(s);
+
+const state = {
+  stage: 0,
+  medals: [],
+  // stage 1
+  giftBox: 0, // which box has the gift (0,1,2)
+  boxesShuffled: false,
+  stage1Done: false,
+  // stage 2
+  selectedBall: null,
+  ballCounts: {cocoa:99,prism:99,dream:99},
+  dimoCaught: false,
+  backpackOpen: false,
+  stage2Done: false,
+  dimoX: 0.5, // 0-1 relative position
+  dimoTargetX: 0.5,
+  dimoAnimId: null,
+  // stage 3
+  spinCount: 0,
+  paidForSpin: false,
+  wheelSpinning: false,
+  wheelAngle: 0,
+  stage3Done: false,
+};
+
+const prizes = ['零食大礼包','爆焰喷喷通行证','66元现金','188元现金'];
+const stage1Prize = prizes[0];
+const stage2Prize = prizes[1];
+
+// ============ SCREEN MANAGEMENT ============
+function showScreen(id) {
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  const screen = document.getElementById('screen-'+id);
+  if (screen) screen.classList.add('active');
+}
+
+function showMedalPopup(content, cb) {
+  window._medalCb = cb || null;
+  $('#medal-popup-content').innerHTML = content;
+  $('#modal-medal').classList.add('active');
+  const card = $('#modal-medal').querySelector('.modal-card');
+  card.onclick = (e)=>e.stopPropagation();
+  const handler = (e)=>{
+    if (e.target === card) return;
+    dismissMedalPopup();
+  };
+  setTimeout(()=>$('#modal-medal').addEventListener('click', handler), 350);
+}
+function dismissMedalPopup() {
+  $('#modal-medal').classList.remove('active');
+  const cb = window._medalCb;
+  window._medalCb = null;
+  if (cb) cb();
+}
+
+function showGiftModal(content, cb) {
+  window._giftCb = cb || null;
+  $('#modal-gift-content').innerHTML = content;
+  $('#modal-gift').classList.add('active');
+  const card = $('#modal-gift').querySelector('.modal-card');
+  card.onclick = (e)=>e.stopPropagation();
+  const handler = (e)=>{
+    if (e.target === card) return;
+    dismissGiftModal();
+  };
+  setTimeout(()=>$('#modal-gift').addEventListener('click', handler), 350);
+}
+function dismissGiftModal() {
+  $('#modal-gift').classList.remove('active');
+  const cb = window._giftCb;
+  window._giftCb = null;
+  if (cb) cb();
+}
+
+function awardMedal(index) {
+  if (state.medals.includes(index)) return;
+  state.medals.push(index);
+  const el = $(`.medal-icon[data-medal="${index}"]`);
+  if (!el) return;
+  const emojis = ['⚡','👑','💖','🤗'];
+  el.textContent = emojis[index];
+  el.classList.remove('locked');
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'medalBounce .6s ease-out';
+  spawnSparkles(5, el);
+}
+
+// ============ PARTICLES ============
+const pCanvas = $('#particles');
+const pCtx = pCanvas.getContext('2d');
+let particles = [];
+let pAnimId;
+
+function resizeParticles() {
+  const app = $('#app');
+  pCanvas.width = app.offsetWidth;
+  pCanvas.height = app.offsetHeight;
+}
+resizeParticles();
+window.addEventListener('resize', resizeParticles);
+
+function spawnParticle() {
+  const app = $('#app');
+  return {
+    x: Math.random()*app.offsetWidth,
+    y: app.offsetHeight+10,
+    size: Math.random()*8+4,
+    speed: Math.random()*1+0.3,
+    opacity: Math.random()*0.4+0.1,
+    drift: (Math.random()-.5)*0.5,
+    type: Math.random()>.5?'⭐':Math.random()>.5?'💕':'✨',
+  };
+}
+
+for (let i=0;i<20;i++) {
+  const p = spawnParticle();
+  p.y = Math.random()*pCanvas.height;
+  particles.push(p);
+}
+
+function animateParticles() {
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  for (const p of particles) {
+    p.y-=p.speed;
+    p.x+=p.drift;
+    if (p.y<-20) { Object.assign(p, spawnParticle()); p.y=pCanvas.height+10; }
+    if (p.x<-20) p.x=pCanvas.width+10;
+    if (p.x>pCanvas.width+20) p.x=-10;
+    pCtx.font = `${p.size}px serif`;
+    pCtx.globalAlpha = p.opacity;
+    pCtx.fillText(p.type, p.x, p.y);
+  }
+  pCtx.globalAlpha=1;
+  pAnimId=requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ============ SPARKLES ============
+function spawnSparkles(count, el) {
+  const rect = el.getBoundingClientRect();
+  const appRect = $('#app').getBoundingClientRect();
+  const cx = rect.left+rect.width/2-appRect.left;
+  const cy = rect.top+rect.height/2-appRect.top;
+  const emojis = ['✨','⭐','💫','🌟','💖'];
+  for (let i=0;i<count;i++) {
+    const s = document.createElement('span');
+    s.className='sparkle';
+    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left=cx+(Math.random()-.5)*60+'px';
+    s.style.top=cy+(Math.random()-.5)*40+'px';
+    s.style.animationDuration=(Math.random()*1.5+1.5)+'s';
+    s.style.fontSize=(Math.random()*1+.8)+'rem';
+    $('#app').appendChild(s);
+    setTimeout(()=>s.remove(), 2500);
+  }
+}
+
+// ============ WELCOME ============
+function startGame() {
+  state.stage=1;
+  showScreen('stage1');
+  spawnSparkles(8, $('#screen-stage1'));
+  setTimeout(()=>initStage1(), 500);
+}
+
+// ============ STAGE 1: SHELL GAME ============
+function initStage1() {
+  state.giftBox=Math.floor(Math.random()*3);
+  state.boxesShuffled=false;
+  state.stage1Done=false;
+  const msg=$('#stage1-msg');
+  msg.textContent='看好了！礼物在第'+(state.giftBox+1)+'个盒子里…';
+  // show the gift
+  const boxes=$$('.gift-box');
+  boxes.forEach(b=>b.classList.remove('open'));
+  setTimeout(()=>{
+    boxes[state.giftBox].classList.add('open');
+    boxes[state.giftBox].querySelector('.box-content').textContent='🍪';
+  },400);
+  // close and shuffle
+  setTimeout(()=>{
+    boxes[state.giftBox].classList.remove('open');
+    msg.textContent='盒子要开始移动啦！';
+    shuffleBoxes(0);
+  },1800);
+}
+
+function shuffleBoxes(step) {
+  const totalSteps=5;
+  if (step>=totalSteps) {
+    $('#stage1-msg').textContent='选一个盒子吧！✨';
+    state.boxesShuffled=true;
+    return;
+  }
+  const boxes=$$('.gift-box');
+  const a=Math.floor(Math.random()*3);
+  let b=Math.floor(Math.random()*3);
+  while(b===a) b=Math.floor(Math.random()*3);
+  // swap in state
+  const tmp=state.giftBox;
+  if (state.giftBox===a) state.giftBox=b;
+  else if (state.giftBox===b) state.giftBox=a;
+  // animate swap
+  const area=$('#boxes-area');
+  const children=[...area.children];
+  const elA=children[a];
+  const elB=children[b];
+  const posA=elA.getBoundingClientRect();
+  const posB=elB.getBoundingClientRect();
+  const dx=posB.left-posA.left;
+  elA.style.transition='transform .55s cubic-bezier(.25,.46,.45,.94)';
+  elB.style.transition='transform .55s cubic-bezier(.25,.46,.45,.94)';
+  elA.style.transform=`translateX(${dx}px)`;
+  elB.style.transform=`translateX(${-dx}px)`;
+  elA.style.zIndex='5';
+  elB.style.zIndex='4';
+  setTimeout(()=>{
+    const nextA=elA.nextSibling,nextB=elB.nextSibling;
+    if(nextA===elB){area.insertBefore(elB,elA)}
+    else if(nextB===elA){area.insertBefore(elA,elB)}
+    else{area.insertBefore(elB,elA);area.insertBefore(elA,nextB)}
+    elA.style.transition='none';
+    elB.style.transition='none';
+    elA.style.transform='';
+    elB.style.transform='';
+    elA.style.zIndex='';
+    elB.style.zIndex='';
+    shuffleBoxes(step+1);
+  },600);
+}
+
+function pickBox(index) {
+  if (!state.boxesShuffled||state.stage1Done) return;
+  state.stage1Done=true;
+  const boxes=$$('.gift-box');
+  // reveal all
+  boxes.forEach((b,i)=>{
+    b.classList.add('open');
+    b.querySelector('.box-content').textContent=i===state.giftBox?'🍪':'💨';
+    b.style.pointerEvents='none';
+  });
+  const msg=$('#stage1-msg');
+  const correctBoxEl=boxes[state.giftBox];
+  const correctDataBox=parseInt(correctBoxEl.getAttribute('data-box'));
+  if (index===correctDataBox) {
+    msg.textContent='🎉 恭喜！你找到了零食大礼包！';
+    spawnSparkles(12, correctBoxEl);
+    setTimeout(()=>{
+      awardMedal(0);
+      const popupContent = `
+        <div style="font-size:3rem">⚡</div>
+        <h3>获得勋章：眼疾手快</h3>
+        <p style="color:#999;margin-top:6px">你的眼神真的太好了！</p>
+        <p style="color:#FF8FAB;margin-top:8px">🎁 零食大礼包</p>
+        <button class="btn btn-sm" style="margin-top:12px" onclick="dismissMedalPopup()">进入下一关 →</button>
+      `;
+      showMedalPopup(popupContent, ()=>enterStage2());
+    },600);
+  } else {
+    msg.textContent='😢 选错了…不过没关系，再来一次！';
+    setTimeout(()=>{
+      state.boxesShuffled=false;
+      state.stage1Done=false;
+      boxes.forEach(b=>{b.classList.remove('open');b.style.pointerEvents='auto'});
+      initStage1();
+    },1200);
+  }
+}
+
+// ============ STAGE 2: DIMO CAPTURE ============
+function enterStage2() {
+  state.stage=2;
+  showScreen('stage2');
+  initStage2Scene();
+}
+
+function initStage2Scene() {
+  state.selectedBall=null;
+  state.ballCounts={cocoa:99,prism:99,dream:99};
+  state.dimoCaught=false;
+  state.backpackOpen=false;
+  state.dimoX=0.5;
+  state.dimoTargetX=0.5;
+  $('#btn-throw').style.display='none';
+  $('#catch-result').classList.remove('show');
+  $('#backpack-view').style.display='none';
+  $('#stage2-msg').textContent='';
+  $$('.ball-option').forEach(b=>{b.classList.remove('selected','broken')});
+  $('#throwing-ball').style.opacity='0';
+  // reset ball count displays
+  ['cocoa','prism','dream'].forEach(t=>{
+    $('#count-'+t).textContent='×99';
+  });
+  // generate grass
+  const grass=$('#scene-grass');
+  grass.innerHTML='';
+  for (let i=0;i<24;i++) {
+    const blade=document.createElement('div');
+    blade.className='grass-blade';
+    blade.style.height=(Math.random()*14+6)+'px';
+    grass.appendChild(blade);
+  }
+  // generate flowers
+  const flowers=$('#scene-flowers');
+  flowers.innerHTML='';
+  const flowerEmojis=['🌸','🌼','🌻','🌷','💐','🌺'];
+  for (let i=0;i<6;i++) {
+    const f=document.createElement('span');
+    f.className='flower';
+    f.textContent=flowerEmojis[i];
+    f.style.left=(Math.random()*85+5)+'%';
+    f.style.bottom=(Math.random()*5)+'%';
+    f.style.animationDelay=(Math.random()*2)+'s';
+    flowers.appendChild(f);
+  }
+  startDimoWalk();
+}
+
+function startDimoWalk() {
+  if (state.dimoCaught) return;
+  state.dimoTargetX = Math.random()*0.55+0.22;
+  const startX = state.dimoX;
+  const endX = state.dimoTargetX;
+  const duration = 1800+Math.random()*2000;
+  const startTime = performance.now();
+  const dimo = $('#dimo-character');
+  function tick(now) {
+    if (state.dimoCaught) return;
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed/duration, 1);
+    // ease in-out
+    const eased = t<.5 ? 2*t*t : -1+(4-2*t)*t;
+    const currentX = startX + (endX-startX)*eased;
+    state.dimoX = currentX;
+    dimo.style.left = currentX*100+'%';
+    // subtle bounce
+    const bounce = Math.abs(Math.sin(t*Math.PI*2))*6;
+    dimo.style.transform = `translateX(-50%) translateY(${-bounce}px)`;
+    if (t < 1) {
+      state.dimoAnimId = requestAnimationFrame(tick);
+    } else {
+      dimo.style.transform = 'translateX(-50%) translateY(0px)';
+      state.dimoAnimId = setTimeout(()=>startDimoWalk(), 300+Math.random()*600);
+    }
+  }
+  state.dimoAnimId = requestAnimationFrame(tick);
+}
+
+function selectBall(type) {
+  if (state.dimoCaught||state.ballCounts[type]<=0) return;
+  state.selectedBall=type;
+  $$('.ball-option').forEach(b=>b.classList.remove('selected'));
+  const el=document.querySelector(`.ball-option[data-ball="${type}"]`);
+  if (el) el.classList.add('selected');
+  $('#btn-throw').style.display='inline-flex';
+  $('#stage2-msg').textContent='准备好了！点击投掷吧~';
+}
+
+function throwBall() {
+  if (!state.selectedBall||state.dimoCaught) return;
+  const ballImgs={cocoa:'可可果球.png',prism:'棱镜球.png',dream:'织梦球.png'};
+  const ballSrc=ballImgs[state.selectedBall];
+  const throwingBall=$('#throwing-ball');
+  throwingBall.querySelector('img').src=ballSrc;
+  const scene=$('#capture-scene');
+  const sceneRect=scene.getBoundingClientRect();
+  const dimo=$('#dimo-character');
+  const dimoRect=dimo.getBoundingClientRect();
+  const startX=sceneRect.width/2-20;
+  const startY=sceneRect.height-60;
+  const endX=dimoRect.left-sceneRect.left+dimoRect.width/2-20;
+  const endY=dimoRect.top-sceneRect.top+10;
+  const peakY=Math.min(startY,endY)-80;
+  const duration=600;
+  const startTime=performance.now();
+  throwingBall.style.opacity='1';
+  throwingBall.style.transition='none';
+  throwingBall.style.left=startX+'px';
+  throwingBall.style.top=startY+'px';
+  throwingBall.style.transform='scale(1)';
+  $('#btn-throw').style.display='none';
+  $$('.ball-option').forEach(b=>b.style.pointerEvents='none');
+  function tick(now) {
+    const t=Math.min((now-startTime)/duration,1);
+    const eased=t<.5?2*t*t:-1+(4-2*t)*t;
+    const cx=startX+(endX-startX)*eased;
+    const cy=startY+(endY-startY)*eased - (1-Math.pow(2*t-1,2))*Math.abs(peakY-(startY+endY)/2);
+    throwingBall.style.left=cx+'px';
+    throwingBall.style.top=cy+'px';
+    throwingBall.style.transform=`scale(${1-t*0.35}) rotate(${t*360}deg)`;
+    if (t<1) {
+      requestAnimationFrame(tick);
+    } else {
+      if(state.selectedBall==='cocoa'){onCatchSuccess();}else{onCatchFail();}
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function onCatchSuccess() {
+  state.dimoCaught=true;
+  state.ballCounts[state.selectedBall]--;
+  $('#count-'+state.selectedBall).textContent='×'+state.ballCounts[state.selectedBall];
+  cancelAnimationFrame(state.dimoAnimId);
+  clearTimeout(state.dimoAnimId);
+  const dimo=$('#dimo-character');
+  dimo.style.transform='translateX(-50%) translateY(0px)';
+  dimo.classList.add('moving');
+  $('#throwing-ball').style.opacity='0';
+  // impact sparkles at Dimo position
+  spawnSparkles(15, dimo);
+  // wiggle then settle
+  dimo.style.animation='none';
+  dimo.offsetHeight;
+  let wiggles=0;
+  const wiggleInterval=setInterval(()=>{
+    dimo.style.transform=wiggles%2===0?'translateX(-50%) rotate(-8deg)':'translateX(-50%) rotate(8deg)';
+    wiggles++;
+    if(wiggles>=6){clearInterval(wiggleInterval);dimo.style.transform='translateX(-50%) rotate(0deg)';dimo.classList.remove('moving');dimo.style.animation='dimoIdle 1.5s ease-in-out infinite'}
+  },100);
+  setTimeout(()=>{
+    $('#catch-result').classList.add('show');
+    spawnSparkles(10, $('#catch-result'));
+  },700);
+}
+
+function onCatchFail() {
+  const ballType=state.selectedBall;
+  state.selectedBall=null;
+  state.ballCounts[ballType]--;
+  const countEl=$('#count-'+ballType);
+  countEl.textContent='×'+state.ballCounts[ballType];
+  if (state.ballCounts[ballType]<=0) {
+    const ballEl=document.querySelector(`.ball-option[data-ball="${ballType}"]`);
+    if (ballEl) ballEl.classList.add('broken');
+  }
+  // shatter the throwing ball at its current position
+  const tb=$('#throwing-ball');
+  tb.style.transition='none';
+  tb.style.opacity='1';
+  tb.style.animation='ballShatter .55s ease-out forwards';
+  // spawn fragments from ball position
+  const scene=$('#capture-scene');
+  const tbRect=tb.getBoundingClientRect();
+  const sceneRect=scene.getBoundingClientRect();
+  const fragColors=['#FF8FAB','#FFB3C6','#fff','#FFD1A9','#C9B1FF','#FFE066'];
+  for (let i=0;i<12;i++) {
+    const frag=document.createElement('div');
+    frag.className='shatter-fragment';
+    frag.style.left=(tbRect.left-sceneRect.left+20)+'px';
+    frag.style.top=(tbRect.top-sceneRect.top+20)+'px';
+    frag.style.setProperty('--dx',(Math.random()*80-40)+'px');
+    frag.style.setProperty('--dy',(Math.random()*80-40)+'px');
+    frag.style.background=fragColors[Math.floor(Math.random()*fragColors.length)];
+    frag.style.animationDuration=(Math.random()*.3+.4)+'s';
+    scene.appendChild(frag);
+    setTimeout(()=>frag.remove(),600);
+  }
+  setTimeout(()=>{tb.style.animation='';tb.style.opacity='0'},550);
+  // Dimo escape hop
+  const dimo=$('#dimo-character');
+  dimo.style.transition='transform .3s';
+  dimo.style.transform='translateX(-50%) translateY(-30px) scale(1.15)';
+  setTimeout(()=>{
+    dimo.style.transform='translateX(-50%) translateY(0px) scale(1)';
+    dimo.style.transition='none';
+  },300);
+  // re-enable ball selection
+  $$('.ball-option').forEach(b=>{b.classList.remove('selected');b.style.pointerEvents='auto'});
+  $('#btn-throw').style.display='none';
+  setTimeout(()=>startDimoWalk(),900);
+}
+function openBackpack() {
+  $('#catch-result').classList.remove('show');
+  $('#backpack-view').style.display='block';
+  state.backpackOpen=true;
+  $('#stage2-msg').textContent='点击迪莫背上的🎁打开礼物！';
+  $('#dimo-character').style.opacity='0.4';
+}
+
+function openGiftInBackpack() {
+  if (!state.backpackOpen||state.stage2Done) return;
+  state.stage2Done=true;
+  spawnSparkles(8, $('#dimo-slot'));
+  const giftContent=`
+    <div style="font-size:3rem">🎫</div>
+    <h3>🎉 爆焰喷喷通行证</h3>
+    <p style="color:#999;margin-top:6px">迪莫送给你的礼物！</p>
+    <div style="background:linear-gradient(135deg,#FFD700,#FFA500);color:#fff;padding:12px 24px;border-radius:12px;margin-top:12px;font-size:1.3rem;font-weight:700">爆焰喷喷通行证</div>
+    <button class="btn btn-sm btn-secondary" style="margin-top:14px" onclick="dismissGiftModal()">太棒了！✨</button>
+  `;
+  showGiftModal(giftContent, ()=>{
+    awardMedal(1);
+    const popupContent=`
+      <div style="font-size:3rem">👑</div>
+      <h3>获得勋章：洛克王国运气王</h3>
+      <p style="color:#999;margin-top:6px">你的运气太好了！迪莫都被你征服了~</p>
+      <p style="color:#FF8FAB;margin-top:8px">🎫 爆焰喷喷通行证</p>
+      <button class="btn btn-sm" style="margin-top:12px" onclick="dismissMedalPopup()">进入下一关 →</button>
+    `;
+    showMedalPopup(popupContent, ()=>enterStage3());
+  });
+}
+
+// ============ STAGE 3: LUCKY WHEEL ============
+let wheelCtx, wheelCanvas;
+const wheelSegments = [
+  {label:'5.2元',pct:40,color:'#FFB3C6'},
+  {label:'52元',pct:30,color:'#FFD1A9'},
+  {label:'66元',pct:10,color:'#FF8FAB'},
+  {label:'谢谢参与',pct:16,color:'#E0E0E0'},
+  {label:'188元',pct:4,color:'#FFD700'},
+];
+const spinResults = ['谢谢参与','66元','188元']; // predetermined
+
+function enterStage3() {
+  state.stage=3;
+  state.spinCount=0;
+  state.paidForSpin=false;
+  state.wheelSpinning=false;
+  state.wheelAngle=0;
+  state.stage3Done=false;
+  showScreen('stage3');
+  updateSpinUI();
+  drawWheel(0);
+  $('#prize-display').textContent='';
+  $('#stage3-hint').textContent='';
+  $('#btn-spin').textContent='💫 开始抽奖';
+}
+
+function updateSpinUI() {
+  const remaining=3-state.spinCount;
+  $('#spin-count-text').textContent=`剩余抽奖次数：${remaining}`;
+  if (state.spinCount>=3) {
+    $('#btn-spin').style.display='none';
+  } else {
+    $('#btn-spin').style.display='inline-flex';
+  }
+}
+
+function drawWheel(rotation) {
+  if (!wheelCtx) {
+    wheelCanvas=$('#wheel-canvas');
+    wheelCtx=wheelCanvas.getContext('2d');
+  }
+  const ctx=wheelCtx;
+  const cx=wheelCanvas.width/2;
+  const cy=wheelCanvas.height/2;
+  const r=cx-10;
+  ctx.clearRect(0,0,wheelCanvas.width,wheelCanvas.height);
+  // draw outer ring
+  ctx.beginPath();ctx.arc(cx,cy,r+8,0,Math.PI*2);
+  ctx.fillStyle='#fff';ctx.fill();
+  ctx.strokeStyle='#FFB3C6';ctx.lineWidth=6;ctx.stroke();
+  // segments
+  let startAngle=-Math.PI/2+rotation;
+  for (const seg of wheelSegments) {
+    const arc=seg.pct/100*Math.PI*2;
+    const endAngle=startAngle+arc;
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,startAngle,endAngle);
+    ctx.closePath();ctx.fillStyle=seg.color;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();
+    // label
+    const midAngle=startAngle+arc/2;
+    const labelR=r*0.68;
+    const lx=cx+Math.cos(midAngle)*labelR;
+    const ly=cy+Math.sin(midAngle)*labelR;
+    ctx.save();ctx.translate(lx,ly);ctx.rotate(midAngle+Math.PI/2);
+    ctx.font='bold 22px "ZCOOL KuaiLe","PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillStyle=seg.label==='188元'?'#7B4B00':'#fff';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,.15)';ctx.shadowBlur=3;
+    ctx.fillText(seg.label,0,0);
+    ctx.shadowBlur=0;
+    ctx.restore();
+    startAngle=endAngle;
+  }
+  // center dot
+  ctx.beginPath();ctx.arc(cx,cy,28,0,Math.PI*2);
+  ctx.fillStyle='#fff';ctx.fill();
+  ctx.strokeStyle='#FFB3C6';ctx.lineWidth=3;ctx.stroke();
+}
+
+function startSpin() {
+  if (state.wheelSpinning||state.spinCount>=3) return;
+  // 测试模式：跳过支付直接抽奖
+  confirmPayment();
+}
+
+function payThenSpin() {
+  // 正式模式：先弹出支付弹窗
+  if (state.wheelSpinning||state.spinCount>=3) return;
+  $('#modal-payment').classList.add('active');
+}
+
+function closePayment() {
+  if (state.wheelSpinning) return;
+  $('#modal-payment').classList.remove('active');
+}
+
+function confirmPayment() {
+  if (state.wheelSpinning) return;
+  $('#modal-payment').classList.remove('active');
+  state.paidForSpin=true;
+  state.wheelSpinning=true;
+  $('#btn-spin').style.display='none';
+  $('#stage3-hint').textContent='';
+  // determine target
+  const targetLabel=spinResults[state.spinCount];
+  // find segment index
+  let targetIdx=-1;
+  for (let i=0;i<wheelSegments.length;i++) {
+    if (wheelSegments[i].label===targetLabel) { targetIdx=i;break; }
+  }
+  // calculate target angle: the segment should be at top (pointer)
+  // pointer is at -PI/2 (top). We need the target segment's center to be at -PI/2
+  // After rotation by angle, the segment at top: startAngle = -PI/2 + angle
+  // So target segment center at top when: angle = -(segmentCenter) [mod 2PI]
+  let segStart=0;
+  for (let i=0;i<targetIdx;i++) segStart+=wheelSegments[i].pct/100*Math.PI*2;
+  const segArc=wheelSegments[targetIdx].pct/100*Math.PI*2;
+  const segCenter=segStart+segArc/2;
+  const jitter=(Math.random()-.5)*segArc*0.5;
+  const targetAngle=((2*Math.PI-segCenter+jitter)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+  const fullSpins=(5+Math.floor(Math.random()*4))*2*Math.PI;
+  const totalAngle=fullSpins+targetAngle;
+  animateWheel(state.wheelAngle,totalAngle,8000+Math.random()*2000,()=>{
+    state.wheelAngle=totalAngle%(2*Math.PI);
+    const result=spinResults[state.spinCount];
+    $('#prize-display').textContent=`🎉 ${result}`;
+    spawnSparkles(10, $('#prize-display'));
+    state.spinCount++;
+    state.wheelSpinning=false;
+    state.paidForSpin=false;
+    if (state.spinCount>=3) {
+      setTimeout(()=>finishStage3(),1200);
+    } else {
+      updateSpinUI();
+      $('#btn-spin').textContent='💫 继续抽奖 ('+(3-state.spinCount)+'次)';
+    }
+  });
+}
+
+function animateWheel(fromAngle,toAngle,duration,cb) {
+  const start=performance.now();
+  function tick(now) {
+    const elapsed=now-start;
+    const t=Math.min(elapsed/duration,1);
+    // ease-out
+    const eased=1-Math.pow(1-t,3);
+    const angle=fromAngle+(toAngle-fromAngle)*eased;
+    drawWheel(angle);
+    if (t<1) {
+      requestAnimationFrame(tick);
+    } else {
+      drawWheel(toAngle%(2*Math.PI));
+      if (cb) cb();
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function finishStage3() {
+  state.stage3Done=true;
+  $('#btn-spin').style.display='none';
+  $('#prize-display').textContent='🎊 三连抽完成！';
+  awardMedal(2);
+  awardMedal(3);
+  const popupContent=`
+    <div style="font-size:3rem">💖🤗</div>
+    <h3>获得双勋章！</h3>
+    <p style="color:#999;margin-top:6px">爱的勋章 + 抱抱勋章</p>
+    <p style="color:#FF8FAB;margin-top:8px">你集齐了所有四枚勋章！</p>
+    <button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="dismissMedalPopup()">见证奇迹 ✨</button>
+  `;
+  showMedalPopup(popupContent, ()=>enterFinal());
+}
+
+// ============ FINAL ============
+function enterFinal() {
+  state.stage=4;
+  showScreen('final');
+  // render medals
+  const medalsData=[
+    {emoji:'⚡',label:'眼疾手快'},
+    {emoji:'👑',label:'洛克王国\n运气王'},
+    {emoji:'💖',label:'爱的勋章'},
+    {emoji:'🤗',label:'抱抱勋章'},
+  ];
+  const container=$('#medals-final');
+  container.innerHTML='';
+  medalsData.forEach((m,i)=>{
+    const badge=document.createElement('div');
+    badge.className='medal-badge';
+    badge.innerHTML=`<span class="medal-emoji">${m.emoji}</span><span class="medal-label">${m.label}</span>`;
+    container.appendChild(badge);
+  });
+  // heart cascade
+  spawnHeartCascade();
+}
+
+function spawnHeartCascade() {
+  const hearts=['❤️','💕','💖','💗','💝','💘','✨','💫','🌟','💐'];
+  const app=$('#app');
+  let count=0;
+  const interval=setInterval(()=>{
+    const h=document.createElement('span');
+    h.className='heart-float';
+    h.textContent=hearts[Math.floor(Math.random()*hearts.length)];
+    h.style.left=Math.random()*90+'%';
+    h.style.bottom='-20px';
+    h.style.fontSize=(Math.random()*2.5+1.2)+'rem';
+    h.style.animationDuration=(Math.random()*2+3)+'s';
+    h.style.animationDelay='0s';
+    app.appendChild(h);
+    setTimeout(()=>h.remove(),4500);
+    count++;
+    if(count>60)clearInterval(interval);
+  },120);
+}
+
+// ============ INIT ============
+// preload images
+['迪莫图片.jpeg','可可果球.png','棱镜球.png','织梦球.png','收款码.png'].forEach(src=>{
+  const img=new Image();img.src=src;
+});
+
+// handle medal bar click to show all medals
+$('#medals-bar').addEventListener('click',()=>{
+  if (state.medals.length===0) return;
+  const names=['眼疾手快','洛克王国运气王','爱的勋章','抱抱勋章'];
+  const emojis=['⚡','👑','💖','🤗'];
+  let html='<div style="font-size:2rem">🏅</div><h3>我的勋章</h3><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px">';
+  state.medals.forEach(i=>{
+    html+=`<div style="text-align:center;font-size:2rem">${emojis[i]}<br><span style="font-size:.7rem;color:#999">${names[i]}</span></div>`;
+  });
+  html+='</div>';
+  showMedalPopup(html, null);
+});
+
+console.log('✨ 妙妙的惊喜抽奖 - 准备就绪！');
+</script>
+</body>
+</html>
